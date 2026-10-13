@@ -13,20 +13,31 @@ from typing import List, Set, Tuple
 
 # ── constants ────────────────────────────────────────────────────────────
 HEADINGS = [
-    "### What the company does",
-    "### What changed in the last 90 days",
-    "### Three talking points",
+    "## What the company does",
+    "## What changed in the last 90 days",
+    "## Three talking points",
 ]
 
-GAP_LINE = "Not found in sources."
+GAP_LINE = "Not found in sources"
 
-CLOSING_RE = re.compile(r"^Tool calls used: (\d+) of 8$")
+CLOSING_RE = re.compile(r"^Tool calls used: (\d+)$")
 
-# Factual-sentence citation: ends with ``(https://…)`` (or ``(http://…)``).
-_CITATION_RE = re.compile(r"\(https?://[^\s)]+\)\s*$")
+# A citation at the end of a sentence: ``(https://…)`` optionally
+# followed by sentence-final punctuation (``.``).
+_CITATION_RE = re.compile(r"\(https?://[^\s)]+\)\.?$")
 
-# Extract the bare URL from the trailing parenthetical.
-_URL_EXTRACT_RE = re.compile(r"\((https?://[^\s)]+)\)\s*$")
+# Extract the bare URL from a trailing parenthetical.
+_URL_EXTRACT_RE = re.compile(r"\((https?://[^\s)]+)\)\.?$")
+
+# Primary split: break after a cited sentence ``(URL). ``
+_CITED_SPLIT_RE = re.compile(r"(?<=\)\.)\s+")
+
+# Secondary split: within a fragment that still contains multiple
+# sentences, break on ``. `` where the period is preceded by a word
+# character.  The two-char lookbehind (``\w`` then ``[a-zA-Z0-9]``)
+# prevents single-digit list markers (``1. …``) from being split while
+# still catching year-endings (``2021. …``) and word-endings.
+_PLAIN_SPLIT_RE = re.compile(r"(?<=\w[a-zA-Z0-9])\.\s+(?=[A-Z])")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────
@@ -45,6 +56,28 @@ def _is_skip_line(line: str, closing_line: str | None) -> bool:
     if closing_line is not None and stripped == closing_line:
         return True
     return False
+
+
+def _extract_sentences(line: str) -> list[str]:
+    """Split a content line into individual factual sentences.
+
+    Two-pass strategy:
+    1. Split on ``(URL). `` boundaries (cited-sentence endings).
+    2. Within each resulting fragment, split on plain sentence boundaries
+       (``. `` preceded by a letter) to catch uncited sentences that
+       appear before or after cited ones.  List markers like ``1. `` are
+       preserved because the lookbehind requires a letter, not a digit.
+    """
+    # Pass 1: split on citation boundaries.
+    coarse = _CITED_SPLIT_RE.split(line.strip())
+
+    # Pass 2: split remaining fragments on plain sentence boundaries.
+    fine: list[str] = []
+    for fragment in coarse:
+        parts = _PLAIN_SPLIT_RE.split(fragment)
+        fine.extend(p.strip() for p in parts if p.strip())
+
+    return fine
 
 
 # ── public API ───────────────────────────────────────────────────────────
@@ -117,17 +150,19 @@ def validate(
         if _is_skip_line(line, closing_line):
             continue
 
-        # This is a factual sentence – it must end with a cited URL.
-        match = _CITATION_RE.search(line)
-        if not match:
-            uncited.append(line.strip())
-            continue
+        # Split the line into individual sentences and check each one.
+        sentences = _extract_sentences(line)
+        for sentence in sentences:
+            match = _CITATION_RE.search(sentence)
+            if not match:
+                uncited.append(sentence)
+                continue
 
-        url_match = _URL_EXTRACT_RE.search(line)
-        if url_match:
-            url = url_match.group(1)
-            if url not in fetched:
-                bad_urls.append(url)
+            url_match = _URL_EXTRACT_RE.search(sentence)
+            if url_match:
+                url = url_match.group(1)
+                if url not in fetched:
+                    bad_urls.append(url)
 
     if not uncited:
         reasons.append("Citations: every factual sentence has a trailing URL.")

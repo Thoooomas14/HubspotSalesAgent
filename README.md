@@ -1,8 +1,8 @@
 ## Briefing contract
 Sections, in order, as exact headings:
-### What the company does
-### What changed in the last 90 days
-### Three talking points
+## What the company does
+## What changed in the last 90 days
+## Three talking points
 Rules:
 1. Every factual sentence ends with a source URL in parentheses, and that URL must be a page the agent fetched.
 2. A section with no sourced facts contains exactly this line: Not found in sources.
@@ -20,15 +20,13 @@ rootdir: C:\Users\thoma\Projects\Zero\HubspotSalesAgent
 configfile: pyproject.toml
 testpaths: tests
 plugins: anyio-4.13.0
-collected 7 items                                                                                        
+collected 6 items                                                                                        
 
-tests/test_basic.py::test_version PASSED                                                           [ 14%] 
-tests/test_validator.py::test_validate_briefing_row[row1-perfect] PASSED                           [ 28%] 
-tests/test_validator.py::test_validate_briefing_row[row2-missing-heading] PASSED                   [ 42%] 
-tests/test_validator.py::test_validate_briefing_row[row3-uncited-sentence] PASSED                  [ 57%]
-tests/test_validator.py::test_validate_briefing_row[row4-url-not-fetched] PASSED                   [ 71%] 
-tests/test_validator.py::test_validate_briefing_row[row5-gap-line-section-passes] PASSED           [ 85%] 
-tests/test_validator.py::test_validate_briefing_row[row6-over-budget] PASSED                       [100%] 
+tests/test_validator.py::test_validate_briefing[SB-01] PASSED                                      [ 16%] 
+tests/test_validator.py::test_validate_briefing[SB-02] PASSED                                      [ 33%] 
+tests/test_validator.py::test_validate_briefing[SB-03] PASSED                                      [ 50%]
+tests/test_validator.py::test_validate_briefing[SB-04] PASSED                                      [ 66%] 
+tests/test_validator.py::test_validate_briefing[SB-05] PASSED                                      [ 83%] 
+tests/test_validator.py::test_validate_briefing[SB-06] PASSED                                      [100%]
 
-=========================================== 7 passed in 0.08s =========================================== 
-(base) PS C:\Users\thoma\Projects\Zero\HubspotSalesAgent> 
+=========================================== 6 passed in 0.16s =========================================== 
