@@ -227,7 +227,7 @@ def validate(
         n = int(m.group(1))
         if n <= 8:
             reasons.append(
-                f"Closing line: matches format and count {n} ≤ 8."
+                f"Closing line: matches format and count {n} <= 8."
             )
         else:
             reasons.append(
